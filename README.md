@@ -17,8 +17,6 @@
 
 ![architecture](docs/architecture.png)
 
-- 원본: [docs/architecture.html](docs/architecture.html) (브라우저로 열어 수정 가능, PNG는 이 파일을 렌더링한 결과)
-
 ## 외부 접속 검증
 
 - **선택한 방식: (B) `GET http://<퍼블릭IP>/health`**
