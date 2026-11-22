@@ -13,6 +13,12 @@
 | 서버 설정 기록 | [docs/server-setup.md](docs/server-setup.md) |
 | 스크린샷 | [docs/images/](docs/images/) |
 
+## 아키텍처
+
+![architecture](docs/architecture.png)
+
+- 원본: [docs/architecture.html](docs/architecture.html) (브라우저로 열어 수정 가능, PNG는 이 파일을 렌더링한 결과)
+
 ## 외부 접속 검증
 
 - **선택한 방식: (B) `GET http://<퍼블릭IP>/health`**
@@ -52,13 +58,3 @@
 - 모든 실습은 IAM 사용자 `b3-1-user`로 진행
 - 액세스 키는 발급하지 않음 (콘솔 + SSH 키페어만 사용)
 - 예산 알림: 월 2 USD 초과 시 이메일
-
-## 진행 기록
-
-- [x] 0. IAM 사용자 + 최소권한 정책
-- [x] 1. VPC / Subnet / Internet Gateway / Route Table
-- [x] 2. Security Group / EC2 / SSH 접속
-- [x] 3. Nginx 설치 + 외부 접속 확인
-- [x] 트러블슈팅 2건 (IAM 로그인 실패 / SG 80 차단 재현)
-- [ ] 4. 아키텍처 다이어그램
-- [ ] 5. 리소스 정리

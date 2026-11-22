@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>B3-1 Architecture</title>
+<style>
+  html, body { margin: 0; background: #ffffff; }
+  svg { display: block; font-family: "Malgun Gothic", "Segoe UI", sans-serif; }
+  .t-title { font-size: 26px; font-weight: 700; fill: #111827; }
+  .t-sub { font-size: 14px; fill: #6b7280; }
+  .t-h { font-size: 15px; font-weight: 700; }
+  .t-b { font-size: 13px; fill: #1f2937; }
+  .t-s { font-size: 12px; fill: #4b5563; }
+  .t-mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px; fill: #1f2937; }
+  .t-flow { font-size: 12.5px; font-weight: 700; }
+</style>
+</head>
+<body>
+<svg width="1400" height="950" viewBox="0 0 1400 950" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+    <marker id="a-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+    <marker id="a-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="40" y="48" class="t-title">codyssey-B3-1 · AWS 웹 서비스 아키텍처</text>
+  <text x="40" y="72" class="t-sub">VPC로 격리된 네트워크 + Public Subnet의 EC2(Nginx) · 외부 → 서비스 트래픽 흐름</text>
+
+  <!-- ===== Left column: clients ===== -->
+  <!-- Internet users -->
+  <rect x="40" y="410" width="190" height="96" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="58" y="438" class="t-h" fill="#1e3a8a">인터넷 사용자</text>
+  <text x="58" y="460" class="t-s">브라우저 / curl</text>
+  <text x="58" y="482" class="t-mono">GET /health</text>
+
+  <!-- Admin laptop -->
+  <rect x="40" y="640" width="190" height="96" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="58" y="668" class="t-h" fill="#92400e">관리자 노트북</text>
+  <text x="58" y="690" class="t-s">SSH (키페어 b3-1-key)</text>
+  <text x="58" y="712" class="t-s">출발지 = 내 IP/32</text>
+
+  <!-- Internet cloud -->
+  <g>
+    <ellipse cx="335" cy="600" rx="70" ry="44" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.5"/>
+    <text x="335" y="596" text-anchor="middle" class="t-h" fill="#374151">Internet</text>
+    <text x="335" y="616" text-anchor="middle" class="t-s">0.0.0.0/0</text>
+  </g>
+
+  <!-- client -> internet -->
+  <path d="M230,470 C270,500 280,540 292,566" fill="none" stroke="#2563eb" stroke-width="2.2" marker-end="url(#a-blue)"/>
+  <path d="M230,680 C270,660 282,650 292,634" fill="none" stroke="#d97706" stroke-width="2.2" marker-end="url(#a-orange)"/>
+
+  <!-- IAM user -->
+  <rect x="40" y="790" width="365" height="86" rx="10" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="58" y="816" class="t-h" fill="#5b21b6">IAM 사용자 · b3-1-user</text>
+  <text x="58" y="838" class="t-s">콘솔로 VPC/EC2/SG 생성·관리 (루트 미사용)</text>
+  <text x="58" y="858" class="t-s">최소권한: EC2·VPC만, 서울 리전, micro, 볼륨 ≤10GiB</text>
+
+  <!-- ===== AWS Cloud ===== -->
+  <rect x="430" y="96" width="940" height="790" rx="14" fill="#ffffff" stroke="#232f3e" stroke-width="2"/>
+  <rect x="430" y="96" width="120" height="30" rx="6" fill="#232f3e"/>
+  <text x="446" y="117" class="t-h" fill="#ffffff">AWS Cloud</text>
+
+  <!-- Region -->
+  <rect x="448" y="140" width="905" height="730" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" stroke-dasharray="8 5"/>
+  <text x="566" y="163" class="t-h" fill="#334155">Region · ap-northeast-2 (서울)</text>
+
+  <!-- VPC -->
+  <rect x="520" y="180" width="815" height="672" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="596" y="206" class="t-h" fill="#166534">VPC · b3-1-vpc</text>
+  <text x="726" y="206" class="t-mono">10.0.0.0/16</text>
+
+  <!-- Route table -->
+  <rect x="980" y="198" width="335" height="104" rx="10" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="996" y="222" class="t-h" fill="#166534">Route Table · b3-1-public-rt</text>
+  <text x="996" y="248" class="t-mono">10.0.0.0/16  →  local</text>
+  <text x="996" y="270" class="t-mono">0.0.0.0/0    →  igw (b3-1-igw)</text>
+  <text x="996" y="291" class="t-s">Public Subnet에 명시적 연결</text>
+
+  <!-- Public subnet -->
+  <rect x="600" y="320" width="715" height="512" rx="12" fill="#ecfdf5" stroke="#059669" stroke-width="1.8"/>
+  <text x="618" y="346" class="t-h" fill="#065f46">Public Subnet · b3-1-public-subnet</text>
+  <text x="618" y="366" class="t-mono">10.0.1.0/24 · ap-northeast-2a · 퍼블릭 IP 자동 할당</text>
+
+  <!-- subnet <-> route table association -->
+  <path d="M1150,320 L1150,302" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Security group -->
+  <rect x="720" y="392" width="575" height="420" rx="10" fill="#fff7ed" fill-opacity="0.55" stroke="#dc2626" stroke-width="2" stroke-dasharray="9 5"/>
+  <text x="738" y="417" class="t-h" fill="#991b1b">Security Group · b3-1-web-sg</text>
+  <text x="738" y="440" class="t-mono">IN  80/tcp  ←  0.0.0.0/0      (HTTP)</text>
+  <text x="738" y="459" class="t-mono">IN  22/tcp  ←  내 IP/32        (SSH)</text>
+  <text x="738" y="478" class="t-mono">OUT all     →  0.0.0.0/0</text>
+  <text x="1048" y="440" class="t-s">전체 포트(0-65535) 허용 없음</text>
+
+  <!-- EC2 -->
+  <rect x="820" y="500" width="455" height="292" rx="10" fill="#ffffff" stroke="#ea580c" stroke-width="2"/>
+  <rect x="820" y="500" width="455" height="34" rx="10" fill="#ea580c"/>
+  <rect x="820" y="520" width="455" height="14" fill="#ea580c"/>
+  <text x="838" y="523" class="t-h" fill="#ffffff">EC2 · b3-1-web</text>
+  <text x="838" y="560" class="t-b">t3.micro · Ubuntu Server 24.04 LTS · EBS gp3 8GiB</text>
+  <text x="838" y="584" class="t-mono">Public IP   43.201.85.164</text>
+  <text x="838" y="604" class="t-mono">Private IP  10.0.1.176</text>
+
+  <!-- Nginx inside -->
+  <rect x="840" y="624" width="415" height="150" rx="8" fill="#f0fdf4" stroke="#15803d" stroke-width="1.5"/>
+  <text x="858" y="650" class="t-h" fill="#166534">Nginx 1.24 · :80</text>
+  <text x="858" y="676" class="t-mono">GET /         →  200  (기본 페이지)</text>
+  <text x="858" y="698" class="t-mono">GET /health   →  200  "OK"</text>
+  <text x="858" y="726" class="t-s">systemd: active (running), enabled</text>
+  <text x="858" y="748" class="t-s">접속 로그: /var/log/nginx/access.log</text>
+
+  <!-- IGW (straddles VPC border) -->
+  <rect x="470" y="560" width="100" height="80" rx="10" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="520" y="590" text-anchor="middle" class="t-h" fill="#5b21b6">IGW</text>
+  <text x="520" y="610" text-anchor="middle" class="t-s">b3-1-igw</text>
+  <text x="520" y="628" text-anchor="middle" class="t-s">VPC 연결</text>
+
+  <!-- internet <-> IGW -->
+  <line x1="405" y1="584" x2="468" y2="584" stroke="#2563eb" stroke-width="2.2" marker-end="url(#a-blue)"/>
+  <line x1="405" y1="614" x2="468" y2="614" stroke="#d97706" stroke-width="2.2" marker-end="url(#a-orange)"/>
+
+  <!-- IGW -> SG -> EC2 inbound -->
+  <path d="M570,584 L818,584" fill="none" stroke="#2563eb" stroke-width="2.4" marker-end="url(#a-blue)"/>
+  <text x="606" y="577" class="t-flow" fill="#1d4ed8">HTTP :80 허용</text>
+  <path d="M570,614 L818,614" fill="none" stroke="#d97706" stroke-width="2.4" marker-end="url(#a-orange)"/>
+  <text x="606" y="633" class="t-flow" fill="#b45309">SSH :22 (내 IP만)</text>
+
+  <!-- outbound -->
+  <path d="M818,690 L640,690 L640,652 L572,652" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a-gray)"/>
+  <text x="612" y="716" class="t-s">아웃바운드</text>
+  <text x="612" y="732" class="t-s">apt update</text>
+  <text x="612" y="748" class="t-s">example.com 200</text>
+
+  <!-- step numbers -->
+  <circle cx="262" cy="512" r="13" fill="#2563eb"/><text x="262" y="517" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">1</text>
+  <circle cx="437" cy="568" r="13" fill="#2563eb"/><text x="437" y="573" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">2</text>
+  <circle cx="790" cy="568" r="13" fill="#2563eb"/><text x="790" y="573" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">3</text>
+
+  <!-- Flow description -->
+  <rect x="40" y="110" width="365" height="270" rx="10" fill="#f9fafb" stroke="#d1d5db"/>
+  <text x="58" y="138" class="t-h" fill="#111827">외부 → 서비스 트래픽 흐름</text>
+  <text x="58" y="166" class="t-b">1  사용자가 http://43.201.85.164/health 요청</text>
+  <text x="58" y="190" class="t-b">2  Internet → IGW: 퍼블릭 IP를 프라이빗 IP</text>
+  <text x="76" y="210" class="t-b">10.0.1.176으로 변환해 VPC 안으로 전달</text>
+  <text x="58" y="234" class="t-b">3  Security Group이 80/tcp 허용 확인 후</text>
+  <text x="76" y="254" class="t-b">EC2의 Nginx가 200 "OK" 응답</text>
+  <text x="58" y="282" class="t-b">↩  응답은 Route Table의 0.0.0.0/0 → IGW</text>
+  <text x="76" y="302" class="t-b">경로로 인터넷에 되돌아감</text>
+  <text x="58" y="332" class="t-s">SSH(22)는 같은 경로지만 SG가 내 IP/32만 허용</text>
+  <text x="58" y="352" class="t-s">SG에서 80을 지우면 요청이 EC2 도달 전 차단(타임아웃)</text>
+
+  <!-- Legend -->
+  <g transform="translate(456,924)">
+    <line x1="0" y1="-5" x2="34" y2="-5" stroke="#2563eb" stroke-width="2.4"/><text x="42" y="0" class="t-s">HTTP 인바운드</text>
+    <line x1="150" y1="-5" x2="184" y2="-5" stroke="#d97706" stroke-width="2.4"/><text x="192" y="0" class="t-s">SSH 인바운드</text>
+    <line x1="292" y1="-5" x2="326" y2="-5" stroke="#6b7280" stroke-width="1.8" stroke-dasharray="6 4"/><text x="334" y="0" class="t-s">EC2 아웃바운드</text>
+    <rect x="452" y="-14" width="30" height="16" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/><text x="490" y="0" class="t-s">Security Group 경계</text>
+  </g>
+</svg>
+</body>
+</html>
