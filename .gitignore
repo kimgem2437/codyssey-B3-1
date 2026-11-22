@@ -1,0 +1,16 @@
+# SSH 키페어 - 절대 커밋 금지
+*.pem
+*.ppk
+*.key
+id_rsa*
+id_ed25519*
+
+# AWS 자격 증명
+.aws/
+credentials
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
